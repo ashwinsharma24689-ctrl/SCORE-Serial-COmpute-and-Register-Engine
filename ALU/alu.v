@@ -35,7 +35,7 @@ wire        cin    = is_sub ? 1'b1       : 1'b0;
     wire [7:0] sum;
 wire        carry_out;
 
-distributed_cla_adder (
+distributed_cla_adder CLA(
     .a   (operand_a),
     .b   (b_mux),
     .c_in (cin),
