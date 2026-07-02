@@ -4,14 +4,14 @@ module reg_array (
     input  wire        write_enable,
     input  wire [2:0]  sr1,
     input  wire [2:0]  sr2,
-    input  wire [4:0]  wr,
+    input  wire [2:0]  wr,
     input  wire [7:0] wd,
     output wire [7:0] rs1,
     output wire [7:0] rs2
 );
 
     reg [7:0] register_array [0:7];
-    genvar i;  // loop counter for reset
+    integer i;  // loop counter for reset
 
     // Combinational read ports ? x0 hardwired to zero
     assign rs1 = (sr1 == 3'd0) ? 8'd0 : register_array[sr1];
