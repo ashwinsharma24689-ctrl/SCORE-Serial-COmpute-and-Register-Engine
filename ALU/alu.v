@@ -30,7 +30,7 @@ wire [7:0] b_mux  = is_sub ? ~operand_b : operand_b;
 wire        cin    = is_sub ? 1'b1       : 1'b0;
 
 
-//  CLA (Carry-Loook-Ahead Adder with BEC)
+//  CLA (Carry-Look-Ahead Adder with BEC)
 
 wire [7:0] sum;
 wire carry_out;
