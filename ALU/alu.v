@@ -80,19 +80,19 @@ always @(*) begin
             comp_flag  = (operand_a[7] != operand_b[7])
             ? operand_a[7]   // different signs: negative < positive
             : sum[7];        // same sign: check subtraction MSB
-            alu_result = {8'd0, comp_flag};
+            alu_result = {7'd0, comp_flag};
         end
 
         SLTU: begin
             // Unsigned less-than: result is 1 when A <u B  (C2 fix)
             // borrow = ~carry_out from A - B; borrow=1 means A < B unsigned
             comp_flag  = ~carry_out;           // borrow signal from subtractor
-            alu_result = {8'd0, comp_flag};
+            alu_result = {7'd0, comp_flag};
         end
 
-        SLL: alu_result = operand_a << operand_b[4:0];
-        SRL: alu_result = operand_a >> operand_b[4:0];
-        SRA: alu_result = $signed(operand_a) >>> operand_b[4:0];
+        SLL: alu_result = operand_a << operand_b[2:0];
+        SRL: alu_result = operand_a >> operand_b[2:0];
+        SRA: alu_result = $signed(operand_a) >>> operand_b[2:0];
 
         default: alu_result = 8'd0;
     endcase
