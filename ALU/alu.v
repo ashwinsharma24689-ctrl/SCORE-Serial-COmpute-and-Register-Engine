@@ -1,10 +1,10 @@
 
 module alu (
-    input  [31:0] operand_a,
-    input  [31:0] operand_b,
+    input  [7:0] operand_a,
+    input  [7:0] operand_b,
     input  [ 3:0] alu_control,
 
-    output reg [31:0] alu_result,
+    output reg [7:0] alu_result,
     output reg        zero_flag,
     output reg        comp_flag,
     output reg        carry_flag,
@@ -26,13 +26,13 @@ localparam ADD = 4'b0000,   // funct7[5]=0, funct3=000
 
 //  Shared subtract / add control
 wire        is_sub = (alu_control == SUB) || (alu_control == SLT);
-wire [31:0] b_mux  = is_sub ? ~operand_b : operand_b;
+wire [7:0] b_mux  = is_sub ? ~operand_b : operand_b;
 wire        cin    = is_sub ? 1'b1       : 1'b0;
 
 
 //  CSLA (Carry-Select Adder with BEC)
 
-wire [31:0] sum;
+    wire [7:0] sum;
 wire        carry_out;
 
 distributed_cla_adder (
@@ -48,7 +48,7 @@ distributed_cla_adder (
 
 always @(*) begin
     // Defaults (prevent latches)
-    alu_result = 32'd0;
+    alu_result = 7'd0;
     carry_flag = 1'b0;
     borrow     = 1'b0;
     overflow   = 1'b0;
@@ -59,16 +59,16 @@ always @(*) begin
         ADD: begin
             alu_result = sum;
             carry_flag = carry_out;
-            overflow   = (~operand_a[31] & ~operand_b[31] &  sum[31]) |
-                         ( operand_a[31] &  operand_b[31] & ~sum[31]);
+            overflow   = (~operand_a[7] & ~operand_b[7] &  sum[7]) |
+                         ( operand_a[7] &  operand_b[7] & ~sum[7]);
         end
 
         SUB: begin
             alu_result = sum;
             carry_flag = carry_out;
             borrow     = ~carry_out;          // borrow when no carry-out
-            overflow   = (~operand_a[31] &  operand_b[31] &  sum[31]) |
-                         ( operand_a[31] & ~operand_b[31] & ~sum[31]);
+            overflow   = (~operand_a[7] &  operand_b[7] &  sum[7]) |
+                        ( operand_a[7] & ~operand_b[7] & ~sum[7]);
         end
 
         AND: alu_result = operand_a & operand_b;
@@ -77,28 +77,28 @@ always @(*) begin
 
         SLT: begin
             // Signed less-than: result is 1 when A < B
-            comp_flag  = (operand_a[31] != operand_b[31])
-                             ? operand_a[31]   // different signs: negative < positive
-                             : sum[31];        // same sign: check subtraction MSB
-            alu_result = {31'd0, comp_flag};
+            comp_flag  = (operand_a[7] != operand_b[7])
+            ? operand_a[7]   // different signs: negative < positive
+            : sum[7];        // same sign: check subtraction MSB
+            alu_result = {7'd0, comp_flag};
         end
 
         SLTU: begin
             // Unsigned less-than: result is 1 when A <u B  (C2 fix)
             // borrow = ~carry_out from A - B; borrow=1 means A < B unsigned
             comp_flag  = ~carry_out;           // borrow signal from subtractor
-            alu_result = {31'd0, comp_flag};
+            alu_result = {7'd0, comp_flag};
         end
 
         SLL: alu_result = operand_a << operand_b[4:0];
         SRL: alu_result = operand_a >> operand_b[4:0];
         SRA: alu_result = $signed(operand_a) >>> operand_b[4:0];
 
-        default: alu_result = 32'd0;
+        default: alu_result = 7'd0;
     endcase
 
-    zero_flag = (alu_result == 32'd0);
-    sign_bit  = alu_result[31];
+    zero_flag = (alu_result == 7'd0);
+    sign_bit  = alu_result[7];
 end
 
 endmodule
@@ -133,7 +133,7 @@ endmodule
 //  this block. That is the lookahead property.
 // ------------------------------------------------------------
 module carry_lookahead_network #(
-    parameter N = 32
+    parameter N = 8
 )(
     input  wire [N-1:0] g,       // Generate bus from all gp_cells
     input  wire [N-1:0] p,       // Propagate bus from all gp_cells
@@ -215,7 +215,7 @@ endmodule
 //  (P[i] = A[i]^B[i] already, so XOR-ing with carry gives sum)
 // ------------------------------------------------------------
 module distributed_cla_adder #(
-    parameter N = 32
+    parameter N = 8
 )(
     input  wire [N-1:0] a,
     input  wire [N-1:0] b,
