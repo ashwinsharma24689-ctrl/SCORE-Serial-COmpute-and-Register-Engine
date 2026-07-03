@@ -1,28 +1,4 @@
-// ============================================================
-//  RxFIFOWriteCtrl
-//
-//  Sits between RxUnit and the RX SyncFIFO's write port.
-//
-//  RxUnit.done_flag is produced by DeFrame, driven off SIPO's
-//  FSM which is clocked on baud_clk (a divided/generated clock,
-//  mesochronous to `clock` but not the same clock). It cannot
-//  be safely used directly as a `clock`-domain write-enable.
-//
-//  This module:
-//    1. Synchronizes done_flag into the `clock` domain (2-flop
-//       synchronizer) and edge-detects it to produce a single
-//       clean one-cycle pulse per received byte.
-//    2. Drops bytes that failed framing/parity checks
-//       (error_flag != 0) rather than pushing corrupted data
-//       into the command stream.
-//    3. Respects fifo_full — never asserts wr_en while full,
-//       so a stalled decoder cannot cause memory corruption or
-//       silent pointer wraparound inside SyncFIFO.
-//
-//  This module has no knowledge of packets, opcodes, or the
-//  5-byte command format — it only knows "a validated byte
-//  arrived." That knowledge lives entirely in RxDecoder.
-// ============================================================
+
 module RxFIFOWriteCtrl(
     input  wire        clock,
     input  wire        reset_n,
