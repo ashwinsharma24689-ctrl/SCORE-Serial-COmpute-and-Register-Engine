@@ -1,26 +1,4 @@
-// ============================================================
-//  RxDecoder
-//
-//  Consumes bytes from the FWFT RX SyncFIFO's read port and
-//  assembles them into one decoded 5-byte command:
-//
-//    Byte 0 : opcode   = { imm_sel, 3'b reserved, alu_control[3:0] }
-//    Byte 1 : sr1      = { 5'b reserved, sr1[2:0] }
-//    Byte 2 : sr2      = { 5'b reserved, sr2[2:0] }
-//    Byte 3 : wr       = { 5'b reserved, wr[2:0]  }
-//    Byte 4 : immediate = full 8-bit value
-//
-//  Has no knowledge of RxUnit, baud_clk, or UART framing at
-//  all — its entire world is the FIFO's read port (rd_data /
-//  empty / rd_en). This keeps it testable by driving the FIFO's
-//  write port directly in a testbench, with zero UART timing
-//  simulation required.
-//
-//  cmd_valid pulses for exactly one `clock` cycle once all 5
-//  bytes have been captured, handing the ALU / register-file
-//  control logic a single atomic "command ready" event instead
-//  of five separate byte-arrival events.
-// ============================================================
+
 module RxDecoder(
     input  wire       clock,
     input  wire       reset_n,
