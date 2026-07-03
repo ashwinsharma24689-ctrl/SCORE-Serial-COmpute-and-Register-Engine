@@ -20,7 +20,7 @@ wire def_strt_bit_w;
 wire def_stp_bit_w;   
 
 //  clocking Unit Instance
-baudgen_r Unit1(
+BaudGenR Unit1(
     //  Inputs
     .reset_n(reset_n),
     .clock(clock),
