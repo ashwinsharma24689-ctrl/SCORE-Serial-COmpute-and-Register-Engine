@@ -1,11 +1,12 @@
-module SIPO(
-    input  wire         reset_n,        
-    input  wire         data_tx,        
-    input  wire         baud_clk,       
 
-    output wire         active_flag,    
-    output wire         recieved_flag,   
-    output wire  [10:0] data_parll      
+module SIPO(
+    input  wire         reset_n,
+    input  wire         data_tx,
+    input  wire         baud_clk,
+
+    output wire         active_flag,
+    output wire         recieved_flag,
+    output wire  [10:0] data_parll
 );
 
 reg [10:0] temp, data_parll_temp;
@@ -25,8 +26,9 @@ always @(posedge baud_clk, negedge reset_n) begin
     frame_counter <= 4'd0;
     temp          <= {11{1'b1}};
   end
- case (next_state)
-      IDLE : 
+  else begin
+    case (next_state)
+      IDLE :
       begin
         temp          <= {11{1'b1}};
         stop_count    <= 4'd0;
@@ -39,7 +41,7 @@ always @(posedge baud_clk, negedge reset_n) begin
         end
       end
 
-      CENTER : 
+      CENTER :
       begin
         if(stop_count == 4'd6) begin
           stop_count     <= 4'd0;
@@ -61,7 +63,7 @@ always @(posedge baud_clk, negedge reset_n) begin
         else begin
           if(stop_count == 4'd14) begin
             frame_counter  <= frame_counter + 4'b1;
-            stop_count     <= 4'd0; 
+            stop_count     <= 4'd0;
             next_state     <= GET;
           end
           else begin
@@ -72,7 +74,7 @@ always @(posedge baud_clk, negedge reset_n) begin
         end
       end
 
-      GET : begin 
+      GET : begin
         next_state     <= FRAME;
         temp           <= data_parll_temp;
       end
