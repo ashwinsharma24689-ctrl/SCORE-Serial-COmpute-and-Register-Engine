@@ -1,5 +1,6 @@
-module baudgen_r( 
-    input  wire     reset_n, 
+
+module BaudGenR(
+    input  wire     reset_n,
     input  wire     clock,
     input  wire     [1:0] baud_rate,
     output reg       baud_clk
@@ -13,7 +14,7 @@ localparam BAUD24    = 2'b00,
            BAUD96    = 2'b10,
            BAUD192   = 2'b11;
 
-always @(*) 
+always @(*)
 begin
     final_value=10'd0;
     case (baud_rate)
@@ -26,21 +27,21 @@ begin
     endcase
 end
 
-always @(negedge reset_n, posedge clock) 
+always @(negedge reset_n, posedge clock)
 begin
-  if(!reset_n) 
+  if(!reset_n)
   begin
     clock_ticks <= 10'd0;
     baud_clk <= 1'b0;
   end
-  else 
+  else
   begin
     if(clock_ticks == final_value)
     begin
       baud_clk <= ~baud_clk;
       clock_ticks <= 10'd0;
     end
-    else 
+    else
     begin
       clock_ticks <= clock_ticks + 1'd1;
     end
