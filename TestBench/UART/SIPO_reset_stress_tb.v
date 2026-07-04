@@ -1,25 +1,5 @@
 `timescale 1ns/1ps
-// ============================================================
-//  SIPO_reset_stress_tb
-//
-//  Not a re-test of SIPO's shift/capture behavior (already
-//  covered by UARTTOPMOD_tb's byte sweep). This is a narrow,
-//  purpose-built test targeting one specific, timing-phase-
-//  dependent bug: the original SIPO had no `else` between its
-//  `if (!reset_n)` branch and the following `case(next_state)`,
-//  so on the reset edge, the case statement could execute
-//  against the pre-reset (stale) value of next_state and win
-//  at end-of-timestep, undermining the reset.
-//
-//  Strategy: force the FSM's internal state registers directly
-//  into a deliberately non-IDLE configuration, at several
-//  different phases relative to baud_clk, then assert reset_n
-//  and confirm it resolves cleanly and immediately to IDLE
-//  every time -- not just on the reset edge, but on the
-//  following active edge too.
-//
-//  REQUIRES the corrected SIPO_fixed.v (module name SIPO).
-// ============================================================
+
 module SIPO_reset_stress_tb;
 
 parameter BCLK_PERIOD = 10;
