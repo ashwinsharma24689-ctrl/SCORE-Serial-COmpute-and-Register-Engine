@@ -19,11 +19,11 @@ This mirrors the core of a minimal 8-bit microcontroller (comparable to a simpli
 ```
                          baud_clk domain                    system clock domain                    baud_clk domain
                        ┌───────────────┐   sync   ┌────────────────────────────────────┐  sync   ┌───────────────┐
-   Host / PC  ───TX───►│    RxUnit     │─────────►│  RX FIFO → RxDecoder →              │────────►│    TxUnit     │───TX───► Host / PC
-   Host / PC  ◄───RX───│  (BaudGenR,   │ 2-flop + │  CommandExecUnit → RegFile/ALU →    │ send vs │  (BaudGenT,   │◄───RX─── Host / PC
-                       │ SIPO, DeFrame,│ edge-det │  TxFIFOWriteCtrl → TX FIFO           │ active/ │ Parity, PISO) │
-                       │  ErrorCheck)  │          │                                      │  done   │               │
-                       └───────────────┘          └────────────────────────────────────┘          └───────────────┘
+   Host / PC  ───TX───►│    RxUnit     │─────────►│  RX FIFO → RxDecoder →             │────────►│    TxUnit     │───TX───► Host / PC
+   Host / PC  ◄───RX───│  (BaudGenR,   │ 2-flop + │  CommandExecUnit → RegFile/ALU →   │ send vs │  (BaudGenT,   │◄───RX─── Host / PC
+                       │ SIPO, DeFrame,│ edge-det │  TxFIFOWriteCtrl → TX FIFO         │ active/ │ Parity, PISO) │
+                       │  ErrorCheck)  │          │                                    │  done   │               │
+                       └───────────────┘          └────────────────────────────────────┘         └───────────────┘
 ```
 
 The two `baud_clk`-domain boxes are physically clocked by dividers generated *from* `clock` (mesochronous, not independent oscillators). The two `sync` points are the only places clock-domain-crossing logic exists in the whole design — `RxFIFOWriteCtrl` on the way in, `TxFIFOReadCtrl` on the way out.
@@ -127,15 +127,15 @@ The device returns exactly one response byte (the ALU result) per command.
 
 ## Project Status
 
-| Component | RTL Design | Testbench | Simulation Run | Synthesis | FPGA Test |
+| Component | RTL Design | Testbench | Simulation Run | Synthesis |
 |---|---|---|---|---|---|
-| UART TX | Done | Done | Pending | Pending | Pending |
-| UART RX | Done (2 bugs fixed) | Done | Pending | Pending | Pending |
-| FIFO | Done | Done | Pending | Pending | Pending |
-| RX/TX control (decoder, exec unit, FIFO ctrl) | Done | Done | Pending | Pending | Pending |
-| Register File | Done (2 bugs fixed) | Done | Pending | Pending | Pending |
-| ALU | Done (several bugs fixed) | Done | Pending | Pending | Pending |
-| Top Level | Done | Done | Pending | Pending | Pending |
+| UART TX | Done | Done | Pending | Pending | 
+| UART RX | Done (2 bugs fixed) | Done | Pending | Pending |
+| FIFO | Done | Done | Pending | Pending | 
+| RX/TX control (decoder, exec unit, FIFO ctrl) | Done | Done | Pending | Pending | 
+| Register File | Done (2 bugs fixed) | Done | Pending | Pending | 
+| ALU | Done (several bugs fixed) | Done | Pending | Pending | 
+| Top Level | Done | Done | Pending | Pending | 
 
 ---
 
@@ -154,21 +154,11 @@ The device returns exactly one response byte (the ALU result) per command.
 
 ---
 
-## Target Platform
-
-- **Clock:** 50 MHz
-- **Target:** FPGA (Xilinx / Intel)
-- **HDL:** Verilog
-
----
-
 ## Next Steps
 
-- [ ] Run the full testbench suite in a simulator (Icarus Verilog / ModelSim / Vivado) and confirm all self-checks pass
+- [ ] Run the full testbench suite in a simulator (Icarus Verilog) and confirm all self-checks pass
 - [ ] Synthesize each module and record timing/area/power reports (see repository structure under `synth/reports/`)
 - [ ] Check timing closure at 50 MHz, particularly across the two clock-domain-crossing points
-- [ ] Deploy `UARTComputeTop` to FPGA and test against a real serial terminal
-- [ ] (Optional cleanup) Move `PISO`'s shift register into a clocked `always` block
 
 ---
 
