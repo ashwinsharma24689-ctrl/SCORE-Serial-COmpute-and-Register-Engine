@@ -1,24 +1,13 @@
 `timescale 1ns/1ps
-// ============================================================
+
 //  UARTTOPMOD_tb
-//
 //  Single shared testbench for the entire UART physical layer,
 //  exercised through the internal TX->RX loopback in
 //  UARTTOPMOD. Covers TxUnit, RxUnit, PISO, SIPO, Parity,
 //  ErrorCheck, DeFrame, BaudGenT, BaudGenR without any
 //  per-submodule testbenches.
-//
-//  REQUIRES the corrected BaudGeneratorR_fixed.v (module
-//  renamed to BaudGenR) and SIPO_fixed.v (reset/case ordering
-//  fix) in place of the originals, or RxUnit will not elaborate
-//  or will not reset cleanly.
-//
-//  Strategy: drive TxUnit.send/data_in, let the internal
-//  loopback carry the serial waveform straight into RxUnit,
-//  and self-check data_out == data_in with error_flag == 0
-//  once rx_done_flag pulses. Repeated across both parity modes
-//  and two baud rates.
-// ============================================================
+
+
 module UARTTOPMOD_tb;
 
 parameter CLK_PERIOD = 20; // 50 MHz
