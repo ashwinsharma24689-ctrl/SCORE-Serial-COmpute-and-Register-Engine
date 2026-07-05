@@ -10,6 +10,10 @@
 //  CommandExecUnit -> reg_array/alu -> TxFIFOWriteCtrl ->
 //  SyncFIFO -> TxFIFOReadCtrl -> TxUnit) through their real,
 //  fully-wired interfaces rather than any stub.
+//
+//  REQUIRES the corrected BaudGeneratorR_fixed.v / SIPO_fixed.v
+//  in place of the originals.
+// ============================================================
 module UARTComputeTop_tb;
 
 parameter CLK_PERIOD = 20; // 50 MHz
