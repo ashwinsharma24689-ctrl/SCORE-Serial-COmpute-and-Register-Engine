@@ -1,4 +1,18 @@
-
+// ============================================================
+//  SyncFIFO — Generic parameterized synchronous FIFO
+//
+//  First-Word-Fall-Through (FWFT) read behavior:
+//    - rd_data reflects the current head-of-queue entry
+//      COMBINATIONALLY, valid any cycle empty == 0.
+//    - rd_en simply advances the read pointer (pops) the
+//      currently-visible word; no extra latency cycle needed
+//      to "see" the data before popping it.
+//
+//  Single clock domain only (RX decoder and RX FIFO both live
+//  on `clock`, not `baud_clk` — the baud_clk-to-clock crossing
+//  is handled separately, upstream of this module's write port,
+//  by RxFIFOWriteCtrl).
+// ============================================================
 module SyncFIFO #(
     parameter WIDTH      = 8,
     parameter DEPTH      = 8,                 // must be a power of 2
