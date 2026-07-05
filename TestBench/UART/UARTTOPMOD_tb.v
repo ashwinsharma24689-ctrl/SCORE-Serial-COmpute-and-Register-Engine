@@ -78,7 +78,7 @@ begin
     wait (tx_active_flag == 1'b0);
 
     // Wait for SIPO/DeFrame to declare the frame fully received.
-    @(posedge rx_done_flag);
+    if (!rx_done_flag) @(posedge rx_done_flag);
     #1; // let combinational data_out/error_flag settle
 
     if (data_out !== data) begin
@@ -100,8 +100,9 @@ end
 endtask
 
 // TX-side bit period in system-clock cycles, derived from BaudGenT's
-// final_value table (baud_clk toggles every final_value ticks, so one
-// full bit period = 2 * final_value).
+// final_value table. The divider counts clock_ticks from 0 up to and
+// including final_value before toggling, so one half-period is actually
+// (final_value + 1) ticks, not final_value -- hence the "+ 1" below.
 function integer tx_bit_period;
     input [1:0] br;
     integer fv;
@@ -113,7 +114,7 @@ begin
         2'b11: fv = 1302;  // BAUD192
         default: fv = 2604;
     endcase
-    tx_bit_period = 2 * fv;
+    tx_bit_period = 2 * (fv + 1);
 end
 endfunction
 
@@ -185,11 +186,14 @@ begin
     repeat (wait_cycles) @(posedge clock);
 
     force DUT.data_tx_w = ~DUT.data_tx_w;
-    repeat (50) @(posedge clock);
+    // Hold for a full bit period (not a small fixed count) so the glitch
+    // is guaranteed to cover RX's actual sampling instant for this bit,
+    // regardless of the RX oversample clock's phase relative to TX's.
+    repeat (bit_period) @(posedge clock);
     release DUT.data_tx_w;
 
     wait (tx_active_flag == 1'b0);
-    @(posedge rx_done_flag);
+    if (!rx_done_flag) @(posedge rx_done_flag);
     #1;
 
     if (error_flag[0] === 1'b1) begin
