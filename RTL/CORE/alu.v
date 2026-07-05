@@ -23,8 +23,7 @@ localparam ADD = 4'b0000,   // funct7[5]=0, funct3=000
            SRL = 4'b0101,   // funct7[5]=0, funct3=101
            SRA = 4'b1101;   // funct7[5]=1, funct3=101
 
-//  Shared subtract / add control
-wire        is_sub = (alu_control == SUB) || (alu_control == SLT);
+wire        is_sub = (alu_control == SUB) || (alu_control == SLT) || (alu_control == SLTU);
 wire [7:0]  b_mux  = is_sub ? ~operand_b : operand_b;
 wire        cin    = is_sub ? 1'b1       : 1'b0;
 
