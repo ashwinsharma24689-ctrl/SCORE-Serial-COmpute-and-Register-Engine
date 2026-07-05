@@ -21,12 +21,12 @@ wire def_stp_bit_w;
 
 //  clocking Unit Instance
 BaudGenR Unit1(
-    //  Inputs
+	 //  Inputs
     .reset_n(reset_n),
     .clock(clock),
     .baud_rate(baud_rate),
 
-    //  Output
+	// Outputs
     .baud_clk(baud_clk_w)
 );
 
