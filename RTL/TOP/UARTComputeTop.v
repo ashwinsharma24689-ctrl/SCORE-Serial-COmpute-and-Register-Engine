@@ -1,4 +1,36 @@
-
+// ============================================================
+//  UARTComputeTop
+//
+//  Complete system integration, per the architecture document's
+//  data flow:
+//
+//    Host -> UART RX -> RX FIFO -> Register File -> ALU
+//         -> Register File -> TX FIFO -> UART TX -> Host
+//
+//  Full block chain instantiated here:
+//
+//    RxUnit                (physical/framing layer, baud_clk)
+//      -> RxFIFOWriteCtrl  (baud_clk -> clock synchronizer, error filter)
+//      -> SyncFIFO (RX)    (8-bit, FWFT, rate decoupling only)
+//      -> RxDecoder         (clock domain, 5-byte packet assembly)
+//      -> CommandExecUnit   (clock domain, drives RegisterFile + ALU,
+//                             handles writeback and result capture)
+//      -> RegisterFile      (reg_array, 8 x 8-bit)
+//      -> alu                (8-bit, distributed CLA adder)
+//      -> TxFIFOWriteCtrl    (clock domain, pushes result byte)
+//      -> SyncFIFO (TX)      (8-bit, FWFT, rate decoupling only)
+//      -> TxFIFOReadCtrl     (clock -> baud_clk handoff synchronizer,
+//                              sequences send vs tx_active/tx_done)
+//      -> TxUnit              (physical/framing layer, baud_clk)
+//
+//  NOTE: this module instantiates RxUnit, which in turn
+//  instantiates BaudGenR and SIPO by name. For this design to
+//  elaborate cleanly, the project's BaudGeneratorR.v and SIPO.v
+//  must be the corrected versions (BaudGeneratorR_fixed.v /
+//  SIPO_fixed.v provided alongside this file) rather than the
+//  originals, which have a module-name mismatch and a reset-
+//  ordering issue respectively.
+// ============================================================
 module UARTComputeTop #(
     parameter FIFO_DEPTH      = 8,
     parameter FIFO_ADDR_WIDTH = 3     // = $clog2(FIFO_DEPTH)
