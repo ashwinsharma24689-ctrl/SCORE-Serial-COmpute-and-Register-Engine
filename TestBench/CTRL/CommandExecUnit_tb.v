@@ -126,7 +126,7 @@ initial begin
 
     // --- Load-immediate trick: sr1=0 (x0), imm_sel=1, ADD -> reg1 = immediate ---
     issue_cmd(1'b1, ADD, 3'd0, 3'd0, 3'd1, 8'h10);
-    @(posedge result_valid);
+    if (!result_valid) @(posedge result_valid);
     #1;
     check(result_data === 8'h10, "load-immediate: result_data reflects immediate via x0+imm");
     #1; // allow reg_array's synchronous write to complete on this same edge
@@ -135,13 +135,13 @@ initial begin
 
     // --- Second load-immediate: reg2 = 0x05 ---
     issue_cmd(1'b1, ADD, 3'd0, 3'd0, 3'd2, 8'h05);
-    @(posedge result_valid);
+    if (!result_valid) @(posedge result_valid);
     @(negedge clock);
     check(REGFILE.register_array[2] === 8'h05, "load-immediate: reg2 written back correctly");
 
     // --- Register-register ADD: reg3 = reg1 + reg2 = 0x15 ---
     issue_cmd(1'b0, ADD, 3'd1, 3'd2, 3'd3, 8'h00);
-    @(posedge result_valid);
+    if (!result_valid) @(posedge result_valid);
     #1;
     check(result_data === 8'h15, "reg-reg ADD: result_data = reg1+reg2");
     @(negedge clock);
@@ -149,7 +149,7 @@ initial begin
 
     // --- Compute-without-store: wr=0, SUB reg1-reg2, verify no register mutated ---
     issue_cmd(1'b0, SUB, 3'd1, 3'd2, 3'd0, 8'h00);
-    @(posedge result_valid);
+    if (!result_valid) @(posedge result_valid);
     #1;
     check(result_data === (8'h10 - 8'h05), "compute-without-store: result_data correct");
     @(negedge clock);

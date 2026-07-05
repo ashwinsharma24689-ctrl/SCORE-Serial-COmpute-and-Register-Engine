@@ -62,15 +62,21 @@ endtask
 
 // Pulse rx_done_flag high for a duration deliberately not aligned to clock edges,
 // with valid data/error_flag held stable across it (mirrors DeFrame's stable outputs).
+// The high window must safely exceed one full clock period -- a pulse narrower
+// than that isn't guaranteed to overlap a sampling edge at all (worst-case phase
+// alignment can drop it between two edges entirely), which is exactly what a
+// synchronizer can't be expected to catch.
 task deliver_byte(input [7:0] data, input [2:0] err_flag);
 begin
     rx_data_out   = data;
     rx_error_flag = err_flag;
     #3;  // intentionally off-grid relative to the 10ns clock period
     rx_done_flag = 1'b1;
-    #7;
+    #17; // > one full CLK_PERIOD, guarantees at least one sampling edge
     rx_done_flag = 1'b0;
-    #20; // let it fully settle before checking
+    #60; // let it fully settle: 3 sync stages + wr_en registration + the
+         // testbench's own posedge-delayed pulse counter can take up to
+         // ~5 clock periods worst-case from the rising edge
 end
 endtask
 

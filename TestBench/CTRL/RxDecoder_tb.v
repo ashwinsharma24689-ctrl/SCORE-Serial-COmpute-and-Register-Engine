@@ -95,10 +95,11 @@ initial begin
     stub_count = 0;
     repeat (3) @(posedge clock);
     reset_n = 1'b1;
+    #1;  // let reset settle before loading data at the same instant as this edge
 
     // --- Packet 1: imm_sel=1, alu_control=ADD(0), sr1=3, sr2=1, wr=5, imm=0x2A ---
     push_packet(8'b1000_0000, 8'd3, 8'd1, 8'd5, 8'h2A);
-    @(posedge cmd_valid);
+    if (!cmd_valid) @(posedge cmd_valid);
     #1;
     check(imm_sel     === 1'b1,  "packet1: imm_sel decoded correctly");
     check(alu_control === 4'h0,  "packet1: alu_control decoded correctly");
@@ -114,7 +115,7 @@ initial begin
 
     // --- Packet 2, sent back-to-back: imm_sel=0, alu_control=SUB(1000), sr1=2, sr2=6, wr=0, imm=0xFF ---
     push_packet(8'b0000_1000, 8'd2, 8'd6, 8'd0, 8'hFF);
-    @(posedge cmd_valid);
+    if (!cmd_valid) @(posedge cmd_valid);
     #1;
     check(imm_sel     === 1'b0,  "packet2: imm_sel decoded correctly");
     check(alu_control === 4'h8,  "packet2: alu_control decoded correctly");
@@ -129,7 +130,7 @@ initial begin
     @(posedge clock); // opcode consumed
     @(posedge clock); // sr1 consumed
     repeat (5) @(posedge clock); // decoder now waits on fifo_empty for sr2
-    @(posedge cmd_valid);
+    if (!cmd_valid) @(posedge cmd_valid);
     #1;
     check(sr1 === 3'd7 && sr2 === 3'd7 && wr === 3'd7 && immediate === 8'h01,
           "packet3: stall mid-packet does not corrupt field capture");
