@@ -1,13 +1,19 @@
 `timescale 1ns/1ps
-
+// ============================================================
 //  UARTTOPMOD_tb
+//
 //  Single shared testbench for the entire UART physical layer,
 //  exercised through the internal TX->RX loopback in
 //  UARTTOPMOD. Covers TxUnit, RxUnit, PISO, SIPO, Parity,
 //  ErrorCheck, DeFrame, BaudGenT, BaudGenR without any
 //  per-submodule testbenches.
-
-
+//
+//  Strategy: drive TxUnit.send/data_in, let the internal
+//  loopback carry the serial waveform straight into RxUnit,
+//  and self-check data_out == data_in with error_flag == 0
+//  once rx_done_flag pulses. Repeated across both parity modes
+//  and two baud rates.
+// ============================================================
 module UARTTOPMOD_tb;
 
 parameter CLK_PERIOD = 20; // 50 MHz
@@ -59,11 +65,16 @@ begin
     @(negedge clock);
     data_in = data;
     send    = 1'b1;
-    @(negedge clock);
-    send    = 1'b0;
 
-    // Wait for PISO to actually start, then finish, the frame.
+    // Hold `send` until PISO actually registers it -- a fixed one-`clock`-
+    // cycle pulse can be completely missed, since baud_clk is a much
+    // slower divided clock and PISO only samples `send` on a posedge
+    // baud_clk while idle.
     wait (tx_active_flag == 1'b1);
+    @(negedge clock);
+    send = 1'b0;
+
+    // Wait for PISO to finish the frame.
     wait (tx_active_flag == 1'b0);
 
     // Wait for SIPO/DeFrame to declare the frame fully received.
@@ -162,10 +173,11 @@ begin
     @(negedge clock);
     data_in = data;
     send    = 1'b1;
+
+    // Same fix as send_byte: hold until PISO actually registers it.
+    wait (tx_active_flag == 1'b1);
     @(negedge clock);
     send    = 1'b0;
-
-    wait (tx_active_flag == 1'b1);
 
     // Bit order on the wire: start(0), data[0..7], parity(9), stop(10).
     // Land mid-way through the parity bit (index 9).
