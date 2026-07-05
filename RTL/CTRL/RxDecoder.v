@@ -1,4 +1,26 @@
-
+// ============================================================
+//  RxDecoder
+//
+//  Consumes bytes from the FWFT RX SyncFIFO's read port and
+//  assembles them into one decoded 5-byte command:
+//
+//    Byte 0 : opcode   = { imm_sel, 3'b reserved, alu_control[3:0] }
+//    Byte 1 : sr1      = { 5'b reserved, sr1[2:0] }
+//    Byte 2 : sr2      = { 5'b reserved, sr2[2:0] }
+//    Byte 3 : wr       = { 5'b reserved, wr[2:0]  }
+//    Byte 4 : immediate = full 8-bit value
+//
+//  Has no knowledge of RxUnit, baud_clk, or UART framing at
+//  all — its entire world is the FIFO's read port (rd_data /
+//  empty / rd_en). This keeps it testable by driving the FIFO's
+//  write port directly in a testbench, with zero UART timing
+//  simulation required.
+//
+//  cmd_valid pulses for exactly one `clock` cycle once all 5
+//  bytes have been captured, handing the ALU / register-file
+//  control logic a single atomic "command ready" event instead
+//  of five separate byte-arrival events.
+// ============================================================
 module RxDecoder(
     input  wire       clock,
     input  wire       reset_n,
@@ -6,7 +28,7 @@ module RxDecoder(
     //  RX SyncFIFO read port (FWFT)
     input  wire [7:0]  fifo_rd_data,
     input  wire        fifo_empty,
-    output reg         fifo_rd_en,
+    output wire        fifo_rd_en,
 
     //  Decoded command, valid for one cycle alongside cmd_valid
     //  (and held stable afterward until the next command completes)
@@ -33,7 +55,6 @@ reg [2:0] state;
 always @(posedge clock or negedge reset_n) begin
     if (!reset_n) begin
         state       <= IDLE;
-        fifo_rd_en  <= 1'b0;
         cmd_valid   <= 1'b0;
         imm_sel     <= 1'b0;
         alu_control <= 4'd0;
@@ -44,10 +65,10 @@ always @(posedge clock or negedge reset_n) begin
     end
     else begin
         //  Defaults each cycle — overridden explicitly below where needed.
-        //  Keeping these as defaults (rather than only setting them on
+        //  Keeping this as a default (rather than only setting it on
         //  transitions) prevents accidental latch inference and keeps
-        //  fifo_rd_en / cmd_valid as clean one-cycle pulses.
-        fifo_rd_en <= 1'b0;
+        //  cmd_valid a clean one-cycle pulse. fifo_rd_en is driven
+        //  combinationally below (see assign), not registered here.
         cmd_valid  <= 1'b0;
 
         case (state)
@@ -59,7 +80,6 @@ always @(posedge clock or negedge reset_n) begin
                 if (!fifo_empty) begin
                     imm_sel     <= fifo_rd_data[7];
                     alu_control <= fifo_rd_data[3:0];
-                    fifo_rd_en  <= 1'b1;   // pop this byte now (FWFT: valid this cycle)
                     state       <= SR1_ST;
                 end
             end
@@ -67,7 +87,6 @@ always @(posedge clock or negedge reset_n) begin
             SR1_ST: begin
                 if (!fifo_empty) begin
                     sr1        <= fifo_rd_data[2:0];
-                    fifo_rd_en <= 1'b1;
                     state      <= SR2_ST;
                 end
             end
@@ -75,7 +94,6 @@ always @(posedge clock or negedge reset_n) begin
             SR2_ST: begin
                 if (!fifo_empty) begin
                     sr2        <= fifo_rd_data[2:0];
-                    fifo_rd_en <= 1'b1;
                     state      <= WR_ST;
                 end
             end
@@ -83,7 +101,6 @@ always @(posedge clock or negedge reset_n) begin
             WR_ST: begin
                 if (!fifo_empty) begin
                     wr         <= fifo_rd_data[2:0];
-                    fifo_rd_en <= 1'b1;
                     state      <= IMM_ST;
                 end
             end
@@ -91,7 +108,6 @@ always @(posedge clock or negedge reset_n) begin
             IMM_ST: begin
                 if (!fifo_empty) begin
                     immediate  <= fifo_rd_data;   // full byte, no slicing
-                    fifo_rd_en <= 1'b1;
                     state      <= DISPATCH;
                 end
             end
@@ -109,5 +125,16 @@ always @(posedge clock or negedge reset_n) begin
         endcase
     end
 end
+
+//  fifo_rd_en must be combinational, not registered: the FIFO's own read
+//  pointer is a flip-flop that samples fifo_rd_en on the same clock edge
+//  this FSM's state register updates on. If fifo_rd_en were registered
+//  here too, it would need one extra edge to reach the FIFO, so every
+//  captured byte would be one cycle (and one FIFO word) stale. Driving
+//  it straight off the current state keeps FSM state transitions and
+//  FIFO pops on the exact same edge, matching real FWFT timing.
+assign fifo_rd_en = !fifo_empty && (state == IDLE   || state == SR1_ST ||
+                                     state == SR2_ST || state == WR_ST  ||
+                                     state == IMM_ST);
 
 endmodule

@@ -1,4 +1,20 @@
-
+// ============================================================
+//  TxFIFOReadCtrl
+//
+//  Drains the TX SyncFIFO one byte at a time into TxUnit,
+//  sequencing `send` against `tx_active_flag`/`tx_done_flag`.
+//
+//  This is where the TX-side clock-domain crossing actually
+//  lives: tx_active_flag and tx_done_flag are produced by
+//  PISO's combinational output block, itself paced by FSM
+//  state that only changes on baud_clk edges. They are
+//  synchronized into the `clock` domain (2-flop each) before
+//  this FSM makes decisions on them — mirroring the same
+//  technique RxFIFOWriteCtrl used for done_flag on the RX side,
+//  just applied to the read side here instead of the write side,
+//  since it's the TX path's *handoff to PISO* that crosses
+//  domains, not its FIFO push.
+// ============================================================
 module TxFIFOReadCtrl(
     input  wire        clock,
     input  wire        reset_n,

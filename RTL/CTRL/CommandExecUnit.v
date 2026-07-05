@@ -1,4 +1,28 @@
-
+// ============================================================
+//  CommandExecUnit
+//
+//  Sits between RxDecoder and (RegisterFile + ALU). Entirely
+//  in the `clock` domain, no synchronization needed anywhere
+//  in this module.
+//
+//  Responsibilities:
+//    - Drive the register file's read addresses directly from
+//      the decoder's latched sr1/sr2 (combinational, since the
+//      register file's read ports are themselves combinational).
+//    - Mux the ALU's operand_b between the register file's rs2
+//      output and the decoder's immediate field, per imm_sel.
+//    - On the cmd_valid pulse: latch a synchronous write to the
+//      register file (guarded by wr != 0, matching reg_array's
+//      own guard, so wr == 0 commands never assert write_enable)
+//      and latch alu_result out as a one-cycle result_valid
+//      pulse for the TX path.
+//
+//  Note: because sr1/sr2/immediate/alu_control are held stable
+//  by RxDecoder from the moment cmd_valid pulses (they only
+//  change again once the *next* 5-byte packet completes), the
+//  combinational register-file-read -> ALU chain has already
+//  settled well before the cmd_valid clock edge is sampled here.
+// ============================================================
 module CommandExecUnit(
     input  wire        clock,
     input  wire        reset_n,

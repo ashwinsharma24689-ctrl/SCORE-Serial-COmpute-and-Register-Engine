@@ -1,3 +1,14 @@
+// ============================================================
+//  TxFIFOWriteCtrl
+//
+//  Mirror of RxFIFOWriteCtrl's role, but simpler: result_valid /
+//  result_data are already native to the `clock` domain (they
+//  come straight from CommandExecUnit), so no synchronizer is
+//  needed on this side at all — the clock-domain-crossing
+//  concern for the TX path lives entirely on the *read* side
+//  (TxFIFOReadCtrl), where bytes finally have to be handed off
+//  to TxUnit's baud_clk-paced PISO.
+// ============================================================
 module TxFIFOWriteCtrl(
     input  wire       clock,
     input  wire       reset_n,
