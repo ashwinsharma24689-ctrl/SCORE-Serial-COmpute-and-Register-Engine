@@ -140,6 +140,16 @@ endtask
 
 reg [7:0] response;
 
+// --- Waveform dump for GTKWave ---
+// dumpvars(0, ...) recurses into every submodule; for this design that's
+// fine (the ALU's generate-block internals are small at 8 bits), and it
+// means you can drill into RxDecoder's FSM state or the FIFO's internal
+// pointers from the same dump without re-running with a different scope.
+initial begin
+    $dumpfile("UARTComputeTop_tb.vcd");
+    $dumpvars(0, UARTComputeTop_tb);
+end
+
 initial begin
     clock = 1'b0;
     reset_n = 1'b0;
