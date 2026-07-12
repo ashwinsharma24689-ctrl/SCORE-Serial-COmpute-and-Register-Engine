@@ -129,13 +129,13 @@ The device returns exactly one response byte (the ALU result) per command.
 
 | Component | RTL Design | Testbench | Simulation Run | Synthesis |
 |---|---|---|---|---|---|
-| UART TX | Done | Done | Pending | Pending | 
-| UART RX | Done (2 bugs fixed) | Done | Pending | Pending |
+| UART TX | Done | Done | Done | Pending | 
+| UART RX | Done (2 bugs fixed) | Done | Done | Pending |
 | FIFO | Done | Done | Pending | Pending | 
-| RX/TX control (decoder, exec unit, FIFO ctrl) | Done | Done | Pending | Pending | 
-| Register File | Done (2 bugs fixed) | Done | Pending | Pending | 
-| ALU | Done (several bugs fixed) | Done | Pending | Pending | 
-| Top Level | Done | Done | Pending | Pending | 
+| RX/TX control (decoder, exec unit, FIFO ctrl) | Done | Done | Done | Pending | 
+| Register File | Done (2 bugs fixed) | Done | Done | Pending | 
+| ALU | Done (several bugs fixed) | Done | Done | Pending | 
+| Top Level | Done | Done | Done | Pending | 
 
 ---
 
