@@ -37,7 +37,7 @@ The two `baud_clk`-domain boxes are physically clocked by dividers generated *fr
 | Sub-module | Description |
 |---|---|
 | `BaudGenT.v` | TX baud rate generator — 1x bit clock, divided from 50 MHz |
-| `BaudGeneratorR.v` | RX baud rate generator — 16x oversampled clock, for bit-center alignment |
+| `BaudGenR.v` | RX baud rate generator — 16x oversampled clock, for bit-center alignment |
 | `Parity.v` | Computes odd/even parity bit via XOR reduction |
 | `PISO.v` | Parallel-in serial-out shift register — serializes the 11-bit TX frame |
 | `SIPO.v` | Serial-in parallel-out shift register with a 4-state bit-timing FSM |
@@ -60,13 +60,13 @@ The two `baud_clk`-domain boxes are physically clocked by dividers generated *fr
 | `TxFIFOWriteCtrl.v` | Pushes each ALU result byte into the TX FIFO (no synchronizer needed — already in the `clock` domain) |
 | `TxFIFOReadCtrl.v` | Drains the TX FIFO into `TxUnit`, sequencing `send` against synchronized `tx_active_flag`/`tx_done_flag` |
 
-### Register File (`RegisterFile.v`, module `reg_array`)
+### Register File (`reg_array.v`, module `reg_array`)
 8 general-purpose registers (R0-R7), each 8 bits wide.
 - Two combinational read ports (operand A / operand B to the ALU); `R0` is hardwired to always read as zero
 - One synchronous write port, gated by `write_enable && wr != 0` — writes to `R0` are silently dropped
 - Synchronous reset clears all 8 registers
 
-### ALU (`ALU8.v`, module `alu`)
+### ALU (`alu.v`, module `alu`)
 8-bit ALU built on an explicit distributed carry-lookahead adder (`gp_cell` + `carry_lookahead_network` + `distributed_cla_adder`), RISC-V-style opcode encoding.
 
 **Supported operations:** ADD, SUB, AND, OR, XOR, SLT (signed less-than), SLTU (unsigned less-than), SLL, SRL, SRA
@@ -109,40 +109,43 @@ The device returns exactly one response byte (the ALU result) per command.
 
 ## Testbenches
 
-| Testbench | Covers |
-|---|---|
-| `tb/uart/UARTTOPMOD_tb.v` | Entire UART physical layer via internal loopback — byte sweep across multiple baud rates and parity modes, absolute `baud_clk` period measurement, and fault injection (corrupted parity bit) to exercise `ErrorCheck`'s detection path. Individual UART submodules (`TxUnit`, `RxUnit`, `PISO`, `SIPO`, `Parity`, `ErrorCheck`, `DeFrame`, `BaudGenT`, `BaudGenR`) are intentionally **not** tested separately — this one testbench covers them all through their real, wired interfaces. |
-| `tb/uart/SIPO_reset_stress_tb.v` | Narrow, purpose-built test sweeping the phase of `reset_n` relative to `baud_clk` while `SIPO`'s FSM is forced into non-`IDLE` states, targeting the specific reset/case-ordering bug that was fixed |
-| `tb/fifo/SyncFIFO_tb.v` | Fill-to-full/overflow rejection, FWFT visibility, drain ordering, same-cycle read+write, mid-operation reset |
-| `tb/core/ALU_tb.v` | Every opcode, overflow/carry/borrow flags, and the shift-amount masking (`operand_b[2:0]`) |
-| `tb/core/RegisterFile_tb.v` | `R0` hardwiring, write guards, reset, boundary address |
-| `tb/ctrl/RxDecoder_tb.v` | Full 5-byte packet decode, back-to-back packets, mid-packet stall — driven through a behavioral FIFO stub, no UART timing involved |
-| `tb/ctrl/CommandExecUnit_tb.v` | Load-immediate, register-register ops, compute-without-store, integrated against the real register file and ALU |
-| `tb/ctrl/RxFIFOWriteCtrl_tb.v` | Synchronizer pulse correctness, error-byte drop, full-FIFO drop |
-| `tb/ctrl/TxFIFOWriteCtrl_tb.v` | Registered pass-through, full-FIFO drop |
-| `tb/ctrl/TxFIFOReadCtrl_tb.v` | `send`/`active`/`done` sequencing against a mimicked PISO |
-| `tb/top/UARTComputeTop_tb.v` | Full system: real bit-banged UART command packets in, decoded response bytes out, exercising every module through the actual top-level wiring |
+**Verification status: 152/152 checks passing across all eleven testbenches** (Icarus Verilog). Raw console output for each run is saved under `sim/results/`, mirroring this table's structure; a GTKWave-ready waveform dump/session for the full system test lives under `sim/waves/`.
+
+| Testbench | Covers | Result |
+|---|---|---|
+| `tb/uart/UARTTOPMOD_tb.v` | Entire UART physical layer via internal loopback — byte sweep across multiple baud rates and parity modes, absolute `baud_clk` period measurement, and fault injection (corrupted parity bit) to exercise `ErrorCheck`'s detection path. Individual UART submodules (`TxUnit`, `RxUnit`, `PISO`, `SIPO`, `Parity`, `ErrorCheck`, `DeFrame`, `BaudGenT`, `BaudGenR`) are intentionally **not** tested separately — this one testbench covers them all through their real, wired interfaces. | [22/22](sim/results/uart/UARTTOPMOD_tb.png) |
+| `tb/uart/SIPO_reset_stress_tb.v` | Narrow, purpose-built test sweeping the phase of `reset_n` relative to `baud_clk` while `SIPO`'s FSM is forced into non-`IDLE` states, targeting the specific reset/case-ordering bug that was fixed | [30/30](sim/results/uart/SIPO_reset_stress_tb.png) |
+| `tb/fifo/SyncFIFO_tb.v` | Fill-to-full/overflow rejection, FWFT visibility, drain ordering, same-cycle read+write, mid-operation reset | [28/28](sim/results/fifo/SyncFIFO_tb.png) |
+| `tb/core/ALU_tb.v` | Every opcode, overflow/carry/borrow flags, and the shift-amount masking (`operand_b[2:0]`) | [20/20](sim/results/core/ALU_tb.png) |
+| `tb/core/RegisterFile_tb.v` | `R0` hardwiring, write guards, reset, boundary address | [8/8](sim/results/core/RegisterFile_tb.png) |
+| `tb/ctrl/RxDecoder_tb.v` | Full 5-byte packet decode, back-to-back packets, mid-packet stall — driven through a behavioral FIFO stub, no UART timing involved | [13/13](sim/results/ctrl/RxDecoder_tb.png) |
+| `tb/ctrl/CommandExecUnit_tb.v` | Load-immediate, register-register ops, compute-without-store, integrated against the real register file and ALU | [9/9](sim/results/ctrl/CommandExecUnit_tb.png) |
+| `tb/ctrl/RxFIFOWriteCtrl_tb.v` | Synchronizer pulse correctness, error-byte drop, full-FIFO drop | [5/5](sim/results/ctrl/RxFIFOWriteCtrl_tb.png) |
+| `tb/ctrl/TxFIFOWriteCtrl_tb.v` | Registered pass-through, full-FIFO drop | [4/4](sim/results/ctrl/TxFIFOWriteCtrl_tb.png) |
+| `tb/ctrl/TxFIFOReadCtrl_tb.v` | `send`/`active`/`done` sequencing against a mimicked PISO | [4/4](sim/results/ctrl/TxFIFOReadCtrl_tb.png) |
+| `tb/top/UARTComputeTop_tb.v` | Full system: real bit-banged UART command packets in, decoded response bytes out, exercising every module through the actual top-level wiring | [9/9](sim/results/top/UARTComputeTop_tb.png) |
 
 ---
 
 ## Project Status
 
 | Component | RTL Design | Testbench | Simulation Run | Synthesis |
-|---|---|---|---|---|---|
-| UART TX | Done | Done | Done | Pending | 
+|---|---|---|---|---|
+| UART TX | Done | Done | Done | Pending |
 | UART RX | Done (2 bugs fixed) | Done | Done | Pending |
-| FIFO | Done | Done | Pending | Pending | 
-| RX/TX control (decoder, exec unit, FIFO ctrl) | Done | Done | Done | Pending | 
-| Register File | Done (2 bugs fixed) | Done | Done | Pending | 
-| ALU | Done (several bugs fixed) | Done | Done | Pending | 
-| Top Level | Done | Done | Done | Pending | 
+| FIFO | Done | Done | Done | Pending |
+| RX/TX control (decoder, exec unit, FIFO ctrl) | Done | Done | Done | Pending |
+| Register File | Done (2 bugs fixed) | Done | Done | Pending |
+| ALU | Done (3 bugs fixed) | Done | Done | Pending |
+| Top Level | Done | Done | Done | Pending |
 
 ---
 
 ## Known Issues
 
 - **`SIPO.v` — FIXED.** The original `if (!reset_n) begin ... end` had no `else` before the following `case(next_state)`, so on the reset edge both branches executed in the same always-block invocation — the `case` read the pre-reset (stale) value of `next_state`, and its own non-blocking assignments, issued later in program order, won at the end of the time step, undermining the reset on that exact cycle. Fixed by adding the missing `else`. See `tb/uart/SIPO_reset_stress_tb.v` for a targeted regression test.
-- **`BaudGeneratorR.v` — FIXED.** `RxUnit.v` instantiates a module named `BaudGenR`, but the module was defined as `baudgen_r` (Verilog module binding is exact-name and case-sensitive). Fixed by renaming the module to `BaudGenR`.
+- **`BaudGenR.v` — FIXED.** `RxUnit.v` instantiates a module named `BaudGenR`, but the module was originally defined under a mismatched module/file name. Fixed by aligning the module name, filename, and every instantiation to `BaudGenR` consistently.
+- **`alu.v` — FIXED.** `SLTU`'s comparison logic (`comp_flag = ~carry_out`) is only valid if the shared adder is actually computing `A - B`, but the `is_sub` control wire never included `SLTU` in its condition — only `SUB`/`SLT` did. This meant `SLTU` silently computed `A + B` instead, giving wrong results whenever the addition's carry-out happened to differ from the subtraction's. Caught by `ALU_tb`'s `SLTU unsigned 1 < 0xFF` vector. Fixed by adding `SLTU` to `is_sub`.
 - **`PISO.v` — reviewed, not a synthesis blocker.** The shift register (`frame_man`) is updated inside a combinational `always @(*)` block that reads and writes itself, which does infer a latch rather than a clean synchronous register. This works correctly in simulation because it's continuously re-evaluated on every `baud_clk`-paced state change from the surrounding clocked FSM (`stop_count`/`next_state`) — it is not a combinational feedback loop with no clocked anchor, and it is not expected to actually fail synthesis. That said, it is not textbook synchronous-design style, and moving `frame_man`'s shift into a clocked `always @(posedge baud_clk)` block would be a worthwhile cleanup for a more portable, "textbook-correct" HDL structure across toolchains.
 
 ---
@@ -151,12 +154,13 @@ The device returns exactly one response byte (the ALU result) per command.
 
 - The compute core (ALU + register file) is deliberately 8 bits wide, matching UART byte granularity end to end — this was a scale-down from an earlier 32-bit version, made specifically because it eliminates the need for any byte-to-word assembly/disassembly logic between the FIFOs and the compute core, at the cost of a 0-255 (unsigned) / -128 to 127 (signed) result range. There is no memory subsystem in this design — the register file is the only storage.
 - `SyncFIFO` is a single reusable module template, instantiated twice (RX and TX) with fully independent storage and pointers — never a single shared instance, since the two directions have opposite data flow, different producers/consumers, and independent backpressure semantics.
+- Verification uses three tiers deliberately, not just one: module-level tests reach corner cases and internal signals (ALU flags, CDC stress timing) a system-level test can't observe or provoke; subsystem/system-level tests catch wiring and integration bugs (e.g. a reset-polarity mismatch at an instantiation boundary) that no module-level test can see, since those bugs only exist at the connection point.
 
 ---
 
 ## Next Steps
 
-- [ ] Run the full testbench suite in a simulator (Icarus Verilog) and confirm all self-checks pass
+- [x] Run the full testbench suite in a simulator (Icarus Verilog) and confirm all self-checks pass — **152/152 passing**
 - [ ] Synthesize each module and record timing/area/power reports (see repository structure under `synth/reports/`)
 - [ ] Check timing closure at 50 MHz, particularly across the two clock-domain-crossing points
 
@@ -164,4 +168,4 @@ The device returns exactly one response byte (the ALU result) per command.
 
 ## License
 
-MIT License — feel free to use, modify, and build on this.
+MIT License — see [LICENSE](LICENSE) for details. Feel free to use, modify, and build on this.
