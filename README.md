@@ -113,17 +113,17 @@ The device returns exactly one response byte (the ALU result) per command.
 
 | Testbench | Covers | Result |
 |---|---|---|
-| `tb/uart/UARTTOPMOD_tb.v` | Entire UART physical layer via internal loopback — byte sweep across multiple baud rates and parity modes, absolute `baud_clk` period measurement, and fault injection (corrupted parity bit) to exercise `ErrorCheck`'s detection path. Individual UART submodules (`TxUnit`, `RxUnit`, `PISO`, `SIPO`, `Parity`, `ErrorCheck`, `DeFrame`, `BaudGenT`, `BaudGenR`) are intentionally **not** tested separately — this one testbench covers them all through their real, wired interfaces. | [22/22](sim/results/uart/UARTTOPMOD_tb.png) |
-| `tb/uart/SIPO_reset_stress_tb.v` | Narrow, purpose-built test sweeping the phase of `reset_n` relative to `baud_clk` while `SIPO`'s FSM is forced into non-`IDLE` states, targeting the specific reset/case-ordering bug that was fixed | [30/30](sim/results/uart/SIPO_reset_stress_tb.png) |
-| `tb/fifo/SyncFIFO_tb.v` | Fill-to-full/overflow rejection, FWFT visibility, drain ordering, same-cycle read+write, mid-operation reset | [28/28](sim/results/fifo/SyncFIFO_tb.png) |
-| `tb/core/ALU_tb.v` | Every opcode, overflow/carry/borrow flags, and the shift-amount masking (`operand_b[2:0]`) | [20/20](sim/results/core/ALU_tb.png) |
-| `tb/core/RegisterFile_tb.v` | `R0` hardwiring, write guards, reset, boundary address | [8/8](sim/results/core/RegisterFile_tb.png) |
-| `tb/ctrl/RxDecoder_tb.v` | Full 5-byte packet decode, back-to-back packets, mid-packet stall — driven through a behavioral FIFO stub, no UART timing involved | [13/13](sim/results/ctrl/RxDecoder_tb.png) |
-| `tb/ctrl/CommandExecUnit_tb.v` | Load-immediate, register-register ops, compute-without-store, integrated against the real register file and ALU | [9/9](sim/results/ctrl/CommandExecUnit_tb.png) |
-| `tb/ctrl/RxFIFOWriteCtrl_tb.v` | Synchronizer pulse correctness, error-byte drop, full-FIFO drop | [5/5](sim/results/ctrl/RxFIFOWriteCtrl_tb.png) |
-| `tb/ctrl/TxFIFOWriteCtrl_tb.v` | Registered pass-through, full-FIFO drop | [4/4](sim/results/ctrl/TxFIFOWriteCtrl_tb.png) |
-| `tb/ctrl/TxFIFOReadCtrl_tb.v` | `send`/`active`/`done` sequencing against a mimicked PISO | [4/4](sim/results/ctrl/TxFIFOReadCtrl_tb.png) |
-| `tb/top/UARTComputeTop_tb.v` | Full system: real bit-banged UART command packets in, decoded response bytes out, exercising every module through the actual top-level wiring | [9/9](sim/results/top/UARTComputeTop_tb.png) |
+| `tb/uart/UARTTOPMOD_tb.v` | Entire UART physical layer via internal loopback — byte sweep across multiple baud rates and parity modes, absolute `baud_clk` period measurement, and fault injection (corrupted parity bit) to exercise `ErrorCheck`'s detection path. Individual UART submodules (`TxUnit`, `RxUnit`, `PISO`, `SIPO`, `Parity`, `ErrorCheck`, `DeFrame`, `BaudGenT`, `BaudGenR`) are intentionally **not** tested separately — this one testbench covers them all through their real, wired interfaces. | [22/22](sim_results/uart/UARTTOPMOD_tb.png) |
+| `tb/uart/SIPO_reset_stress_tb.v` | Narrow, purpose-built test sweeping the phase of `reset_n` relative to `baud_clk` while `SIPO`'s FSM is forced into non-`IDLE` states, targeting the specific reset/case-ordering bug that was fixed | [30/30](sim_results/uart/SIPO_reset_stress_tb.png) |
+| `tb/fifo/SyncFIFO_tb.v` | Fill-to-full/overflow rejection, FWFT visibility, drain ordering, same-cycle read+write, mid-operation reset | [28/28](sim_results/fifo/SyncFIFO_tb.png) |
+| `tb/core/ALU_tb.v` | Every opcode, overflow/carry/borrow flags, and the shift-amount masking (`operand_b[2:0]`) | [20/20](sim_results/core/ALU_tb.png) |
+| `tb/core/RegisterFile_tb.v` | `R0` hardwiring, write guards, reset, boundary address | [8/8](sim_results/core/RegisterFile_tb.png) |
+| `tb/ctrl/RxDecoder_tb.v` | Full 5-byte packet decode, back-to-back packets, mid-packet stall — driven through a behavioral FIFO stub, no UART timing involved | [13/13](sim_results/ctrl/RxDecoder_tb.png) |
+| `tb/ctrl/CommandExecUnit_tb.v` | Load-immediate, register-register ops, compute-without-store, integrated against the real register file and ALU | [9/9](sim_results/ctrl/CommandExecUnit_tb.png) |
+| `tb/ctrl/RxFIFOWriteCtrl_tb.v` | Synchronizer pulse correctness, error-byte drop, full-FIFO drop | [5/5](sim_results/ctrl/RxFIFOWriteCtrl_tb.png) |
+| `tb/ctrl/TxFIFOWriteCtrl_tb.v` | Registered pass-through, full-FIFO drop | [4/4](sim_results/ctrl/TxFIFOWriteCtrl_tb.png) |
+| `tb/ctrl/TxFIFOReadCtrl_tb.v` | `send`/`active`/`done` sequencing against a mimicked PISO | [4/4](sim_results/ctrl/TxFIFOReadCtrl_tb.png) |
+| `tb/top/UARTComputeTop_tb.v` | Full system: real bit-banged UART command packets in, decoded response bytes out, exercising every module through the actual top-level wiring | [9/9](sim_results/top/UARTComputeTop_tb.png) |
 
 ---
 
